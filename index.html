@@ -53,6 +53,8 @@
       // const networkType = NetworkType.TEST_NET;
       // const node = await getActiveNode(NetworkType.TEST_NET);
 
+      console.log("接続", node);
+      
       const max = 15;
       const ctx = $('#myChart');
 
@@ -64,33 +66,6 @@
       const epochAdjustment = await repo.getEpochAdjustment().toPromise();
       const wsEndpoint = node.replace('http', 'ws') + "/ws";
       const listener = new Listener(wsEndpoint,nsRepo,WebSocket);
-
-      // function init() {
-      //   let count = 0;
-      //   let timer;
-      //   timer = setInterval( async function(){
-      //     count++;
-      //     isLastPage = await getTransfers(25);
-      //     if (isLastPage || count >= maxCount){
-      //       clearInterval(timer);
-      //       console.log('interval clear');
-      //     }
-      //   },2500)
-      // }
-
-      // async function getTransfers(pageSize){
-      //   pageNumber++;
-      //   const sCriteria = {
-      //     group: TransactionGroup.Confirmed,
-      //     order: "desc",
-      //     // transferMosaicId: new MosaicId(tomatinaMosaicId),
-      //     pageNumber: pageNumber,
-      //     pageSize: pageSize
-      //   }
-      //   const txs = await txRepo.search(sCriteria).toPromise();
-      //   parseTxs(txs.data);
-      //   return txs.isLastPage;
-      // }
 
       async function getTransfers(block){
         charCount = 0;
