@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico">
+  <title>トマティーナ Monitor</title>
+</head>
+<body>
+  <header>
+    <h1>トマティーナ Monitor</h1>
+  </header>
+  <section>
+    <div class="container">
+      <div class="date-area">
+        更新日時:<span id="update"></span>
+      </div>
+      <canvas id="myChart" height="100"></canvas>
+    </div>
+  </section>
+  <script src="https://xembook.github.io/nem2-browserify/symbol-sdk-pack-2.0.0.js"></script>
+  <script src="https://ishidad2.github.io/symbol-node-util-browserify/symbol-node-util-1.0.9.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+  <script>
+    const { getActiveNode } = require("/node_modules/symbol-node-util");
+    const {
+      NetworkType,
+      RepositoryFactoryHttp,
+      MosaicId,
+      TransactionGroup,
+      Listener,
+      ReceiptType,
+      TransactionType
+    } = require("/node_modules/symbol-sdk");
+    (async()=>{
+      let myChart;
+      let pageNumber = 0;
+      let labelVal = [dayjs().format('HH:mm:ss')];
+      let chartVal = [0];
+      let charCount = 0;
+      const maxCount = 10;
+      // ===== 本番 ====
+      const tomatinaMosaicId = "310378C18A140D1B";
+      const networkType = NetworkType.MAIN_NET;
+
+      // ******** テスト用 ********
+      // const tomatinaMosaicId = "4881465A6D47325F";
+      // const networkType = NetworkType.TEST_NET;
+
+      const max = 15;
+      const ctx = $('#myChart');
+
+      const node = await getActiveNode(NetworkType.TEST_NET);
+      const repo = new RepositoryFactoryHttp(node);
+      const txRepo = repo.createTransactionRepository();
+      const nsRepo = repo.createNamespaceRepository();
+      const blockRepo = repo.createBlockRepository();
+
+      const epochAdjustment = await repo.getEpochAdjustment().toPromise();
+      const wsEndpoint = node.replace('http', 'ws') + "/ws";
+      const listener = new Listener(wsEndpoint,nsRepo,WebSocket);
+
+      async function getTransfers(block){
+        charCount = 0;
+        try {
+          const tx = await txRepo.search({
+            height: block.height.compact(),
+            group: TransactionGroup.Confirmed
+          }).toPromise();
+          await parseTxs(tx.data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function parseTxs(txs){
+        for(tx of txs){
+          console.log(tx);
+          //アグリゲートトランザクション判定
+          if(tx.type === TransactionType.AGGREGATE_COMPLETE || tx.type === TransactionType.AGGREGATE_BONDED){
+            //アグリゲートの場合、内部トランザクションを再取得
+            const reTx = await txRepo.getTransaction(
+              tx.transactionInfo.hash,
+              TransactionGroup.Confirmed
+            ).toPromise();
+            console.log("== aggregateTx ==")
+            //この関数を再帰的に呼び出し
+            parseTxs(reTx.innerTransactions);  //再帰呼び出し
+            console.log("-----------------")
+          }else {
+            if(tx.mosaics !== undefined){
+              tx.mosaics.forEach(mosaic => {
+                if(mosaic.id.toHex() === tomatinaMosaicId){
+                  console.log("🍅モザイクのTx", tx);
+                  charCount++;
+                }
+              });
+            }
+          }
+        }
+      }
+
+      async function updateChart(block){
+        if(myChart){
+          const blockTime = dayjs((epochAdjustment * 1000) + block.timestamp.compact()).format("HH:mm:ss");
+          console.log("blockTime", blockTime);
+          let chartLabels = myChart.data.labels;
+          let chartDatasets =  myChart.data.datasets;
+          if( myChart.data.labels.length > max){
+            chartLabels =  myChart.data.labels.slice( myChart.data.labels.length-max,  myChart.data.labels.length)
+          }
+          //ラベル書き換え
+          myChart.data.labels = [...chartLabels, blockTime];
+
+          await getTransfers(block);
+          console.log("charCount", charCount);
+
+          myChart.data.datasets.forEach((dataset) => {
+            if( dataset.data.length > max){
+              dataset.data.shift();
+            }
+            dataset.data.push(charCount);
+          });
+
+          myChart.update();
+          $('#update').text(dayjs().format('HH:mm:ss'))
+        }
+      }
+      
+      function drawChart(){
+        myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labelVal,
+            datasets: [{
+              data: chartVal,
+              backgroundColor: 'rgba(0, 134, 197, 0.7)',
+              borderColor: 'rgba(0, 134, 197, 1)',
+              fill: false,
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            },
+            plugins: {
+              legend: {
+                display: false,
+              }
+            }
+          }
+        });
+      }
+      
+      //チャート描画
+      drawChart();
+
+      listener.open().then(() => {
+        console.log('listner open')
+        listener.newBlock().subscribe((block) => {
+          updateChart(block);
+        });
+
+        listener.webSocket.onclose = function(){
+          console.log("listener onclose");
+        }
+        listenNewBlock();
+      });
+
+      function listenNewBlock(){
+        listener.newBlock();
+        setTimeout(listenNewBlock, 50000);
+      }
+    })();
+  </script>
+</body>
+</html>
