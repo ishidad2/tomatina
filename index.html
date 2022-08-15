@@ -44,17 +44,18 @@
       let charCount = 0;
       const maxCount = 10;
       // ===== 本番 ====
-      // const tomatinaMosaicId = "310378C18A140D1B";
-      // const networkType = NetworkType.MAIN_NET;
+      const tomatinaMosaicId = "310378C18A140D1B";
+      const networkType = NetworkType.MAIN_NET;
+      const node = await getActiveNode(NetworkType.MAIN_NET);
 
       // ******** テスト用 ********
-      const tomatinaMosaicId = "4881465A6D47325F";
-      const networkType = NetworkType.TEST_NET;
+      // const tomatinaMosaicId = "4881465A6D47325F";
+      // const networkType = NetworkType.TEST_NET;
+      // const node = await getActiveNode(NetworkType.TEST_NET);
 
       const max = 15;
       const ctx = $('#myChart');
 
-      const node = await getActiveNode(NetworkType.TEST_NET);
       const repo = new RepositoryFactoryHttp(node);
       const txRepo = repo.createTransactionRepository();
       const nsRepo = repo.createNamespaceRepository();
