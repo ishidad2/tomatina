@@ -18,6 +18,14 @@ section{
   background-blend-mode:lighten; */
 }
 
+.canvas-container {
+  position: relative;
+  width:  calc(100% - 40px);
+  height: 300px;
+  overflow: hidden;
+  margin:20px;
+}
+
 h1 {
   font-size: 45px;
   color: aliceblue;
@@ -28,7 +36,8 @@ h1 {
 header {
   text-align: center;
   padding: 4px 10%;
-  background-color: rgb(184, 6, 255);
+  /* background-color: rgb(184, 6, 255); */
+  background: url("./header.jpg");
 }
 
 .container {
