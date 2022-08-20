@@ -14,6 +14,7 @@
 	<meta name="twitter:title" content="トマティーナ Monitor">
 	<meta name="twitter:description" content="トマティーナ Monitorはxembook.tomatoモザイクのトランザクションを可視化するツールです">
 	<meta name="twitter:image" content="https://ishidad2.github.io/2022-tomatina/tomato.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <title>トマティーナ Monitor</title>
 </head>
 <body>
@@ -21,13 +22,30 @@
     <h1>トマティーナ Monitor</h1>
   </header>
   <section>
-    <div class="container">
-      <div class="date-area">
-        更新日時:<span id="update"></span>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col col-sm-12 col-md-11 col-lg-8">
+          <div class="date-area">
+            🍅トランザクショングラフ (<span id="tomato_graph_update"></span> 更新)
+          </div>
+          <canvas id="myChart" height="120"></canvas>
+        </div>
+        <div class="col">
+          <div class="date-area">
+            XEMBook🍅ランキング (<span id="ranking_update"></span> 更新)
+          </div>
+          <div class="ranking">
+            <div id=""loading></div>
+            <ul id="tomatoRanking">
+            </ul>
+          </div>
+        </div>
+        <!-- col end -->
       </div>
-      <canvas id="myChart" height="120"></canvas>
+      <!-- row end -->
     </div>
   </section>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
   <script src="https://xembook.github.io/nem2-browserify/symbol-sdk-pack-2.0.0.js"></script>
   <script src="https://ishidad2.github.io/symbol-node-util-browserify/symbol-node-util-1.0.9.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -45,21 +63,30 @@
       TransactionType
     } = require("/node_modules/symbol-sdk");
     (async()=>{
+      $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
+
       let myChart;
-      let pageNumber = 0;
       let labelVal = [dayjs().format('HH:mm:ss')];
-      let chartVal = [0];
-      let charCount = 0;
-      const maxCount = 10;
+      let tomatoCharCount = 0;
+      let toshiTomatoChartCount = 0;
+      let pageNumber = 0;
+      const maxPage = 25;
+      
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
+      const toshiTomatoMosaicId = "613E6D0FC11F4530";
       const networkType = NetworkType.MAIN_NET;
       const node = await getActiveNode(NetworkType.MAIN_NET);
+      const startBlock = 1529793; //https://clock.sfn.tools/symbol?block=1529793&lang=ja
+      const endBlock = 1532672;   //https://clock.sfn.tools/symbol?block=1532672&lang=ja
 
       // ******** テスト用 ********
-      // const tomatinaMosaicId = "4881465A6D47325F";
+      // const tomatinaMosaicId = "224CEE82F56D5A8B";
+      // const toshiTomatoMosaicId = "16D70B79689070DB";
       // const networkType = NetworkType.TEST_NET;
       // const node = await getActiveNode(NetworkType.TEST_NET);
+      // const startBlock = 619006;
+      // const endBlock = 640000;
 
       console.log("接続", node);
 
@@ -76,7 +103,8 @@
       const listener = new Listener(wsEndpoint,nsRepo,WebSocket);
 
       async function getTransfers(block){
-        charCount = 0;
+        tomatoCharCount = 0;
+        toshiTomatoChartCount = 0;
         try {
           const tx = await txRepo.search({
             height: block.height.compact(),
@@ -90,7 +118,6 @@
 
       async function parseTxs(txs){
         for(tx of txs){
-          console.log(tx);
           //アグリゲートトランザクション判定
           if(tx.type === TransactionType.AGGREGATE_COMPLETE || tx.type === TransactionType.AGGREGATE_BONDED){
             //アグリゲートの場合、内部トランザクションを再取得
@@ -107,7 +134,11 @@
               tx.mosaics.forEach(mosaic => {
                 if(mosaic.id.toHex() === tomatinaMosaicId){
                   console.log("🍅モザイクのTx", tx);
-                  charCount++;
+                  tomatoCharCount++;
+                }
+                if(mosaic.id.toHex() === toshiTomatoMosaicId){
+                  console.log("Toshi🍅モザイクのTx", tx);
+                  toshiTomatoChartCount++;
                 }
               });
             }
@@ -128,17 +159,21 @@
           myChart.data.labels = [...chartLabels, blockTime];
 
           await getTransfers(block);
-          console.log("charCount", charCount);
 
           myChart.data.datasets.forEach((dataset) => {
             if( dataset.data.length > max){
               dataset.data.shift();
             }
-            dataset.data.push(charCount);
+            if(dataset.label === "xembook.tomato"){
+              dataset.data.push(tomatoCharCount);
+            }
+            if(dataset.label === "toshi.tomato"){
+              dataset.data.push(toshiTomatoChartCount);
+            }
           });
 
           myChart.update();
-          $('#update').text(dayjs().format('HH:mm:ss'))
+          $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
         }
       }
       
@@ -147,12 +182,22 @@
           type: 'line',
           data: {
             labels: labelVal,
-            datasets: [{
-              data: chartVal,
-              backgroundColor: 'rgba(0, 134, 197, 0.7)',
-              borderColor: 'rgba(0, 134, 197, 1)',
-              fill: false,
-            }]
+            datasets: [
+              {
+                label: 'xembook.tomato',
+                data: [0],
+                backgroundColor: 'rgba(0, 134, 197, 0.7)',
+                borderColor: 'rgba(0, 134, 197, 1)',
+                fill: false,
+              },
+              {
+                label: 'toshi.tomato',
+                data: [0],
+                backgroundColor: 'rgba(255,128,64, 0.7)',
+                borderColor: 'rgba(255,128,64, 1)',
+                fill: false,
+              }
+            ]
           },
           options: {
             scales: {
@@ -160,20 +205,67 @@
                 beginAtZero: true
               }
             },
-            plugins: {
-              legend: {
-                display: false,
-              }
-            }
           }
         });
-
       }
-      
-      //初回実行
-      // init();
-      drawChart();
 
+      async function getTomatoTransaction(rank){
+        pageNumber++;
+        console.log("page", pageNumber);
+        let lastHeight = 0;
+        const criteria = {
+          group: TransactionGroup.Confirmed,
+          embedded: true,
+          transferMosaicId: new MosaicId(tomatinaMosaicId),
+          order: "desc",
+          pageNumber: pageNumber
+        }
+        const txs = await txRepo.search(criteria).toPromise();
+        let isLastPage = txs.isLastPage;
+        for(tx of txs.data){
+          //指定ブロック内の🍅トランザクションを計測
+          const block_height = tx.transactionInfo.height.compact();
+          if(endBlock >= block_height && startBlock <= block_height){
+            rank.push(tx.signer.address.plain());
+          }
+          lastHeight = tx.transactionInfo.height.compact();
+        }
+        return [isLastPage, lastHeight];
+      }
+
+      function getBatchOfTransfers(){
+        pageNumber = 0;
+        let rank = [];
+        let timer = setInterval( async function(){
+          [isLastPage, height] = await getTomatoTransaction(rank);
+          console.log("🍅履歴取得開始" + dayjs().format(), isLastPage, height);
+          if (isLastPage || startBlock >= height || maxPage <= pageNumber){
+            let rankings = {};
+            for (let i = 0; i < rank.length; i++) {
+              var elm = rank[i];
+              rankings[elm] = (rankings[elm] || 0) + 1;
+            }
+            let result = Object.entries(rankings).map(([key, value]) => ({"address": key, "txNum": value}));
+
+            let tomatinaRanking = result.sort(function(a, b){
+              return (a.txNum > b.txNum) ? -1 : 1;
+            });
+            $('#tomatoRanking').empty();
+            tomatinaRanking.forEach((el) => {
+              console.log(el);
+              $('#tomatoRanking').append('<li>' + el.address + " " + el.txNum + '</li>');
+            })
+            $('#ranking_update').text(dayjs().format('HH:mm:ss'));
+            clearInterval(timer);
+          }
+        },1000);
+      }
+
+      drawChart();
+      getBatchOfTransfers();
+      setInterval( function(){
+        getBatchOfTransfers();
+      }, 60000 * 3); //3分毎
       listener.open().then(() => {
         console.log('listner open')
         listener.newBlock().subscribe((block) => {
