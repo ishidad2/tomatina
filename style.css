@@ -88,9 +88,7 @@ header {
 }
 
 .memo {
-  margin: auto;
-  display: flex;
-  justify-content: center;
+  text-align: center;
   font-size: 16px;
   color: #0074bf;
   font-weight: 800;
