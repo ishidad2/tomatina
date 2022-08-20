@@ -26,23 +26,41 @@
       <div class="row">
         <div class="col col-sm-12 col-md-11 col-lg-8">
           <div class="date-area">
-            🍅トランザクショングラフ (<span id="tomato_graph_update"></span> 更新)
+            🍅トランザクショングラフ (<span id="tomato_graph_update">****</span> 更新)
           </div>
           <canvas id="myChart" height="120"></canvas>
         </div>
         <div class="col">
           <div class="date-area">
-            XEMBook🍅ランキング (<span id="ranking_update"></span> 更新)
+            XEMBook🍅ランキング (<span id="ranking_update">****</span> 更新)
           </div>
           <div class="ranking">
-            <div id=""loading></div>
-            <ul id="tomatoRanking">
+            <div id="loading">
+              <img src="./loading-s-17.gif" alt="">
+            </div>
+            <ul class="d-ranking-list" id="tomatoRanking">
             </ul>
           </div>
         </div>
         <!-- col end -->
       </div>
       <!-- row end -->
+      <div class="row">
+        <div class="col">
+          <div class="date-area">
+            現在の🍅保有者情報 (<span id="tomato_user_update">****</span> 更新)
+          </div>
+          <div class="tomato-user">
+            xembook.tomato 保有者人数：<span id="xembook_tomato_user">***</span> 人
+          </div>
+          <div class="tomato-user">
+            toshi.tomato 保有者人数：<span id="toshi_tomato_user">***</span> 人
+          </div>
+          <div class="memo">
+            ※トマティーナ Monitorはブロック高：<span id="startBlock"></span>～<span id="endBlock"></span>までのトランザクションをモニターします。
+          </div>
+        </div>
+      </div>
     </div>
   </section>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
@@ -89,6 +107,8 @@
       // const endBlock = 640000;
 
       console.log("接続", node);
+      $('#startBlock').text(startBlock);
+      $('#endBlock').text(endBlock);
 
       const max = 40;
       const ctx = $('#myChart');
@@ -97,6 +117,7 @@
       const txRepo = repo.createTransactionRepository();
       const nsRepo = repo.createNamespaceRepository();
       const blockRepo = repo.createBlockRepository();
+      const accountRepo = repo.createAccountRepository();
 
       const epochAdjustment = await repo.getEpochAdjustment().toPromise();
       const wsEndpoint = node.replace('http', 'ws') + "/ws";
@@ -171,7 +192,6 @@
               dataset.data.push(toshiTomatoChartCount);
             }
           });
-
           myChart.update();
           $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
         }
@@ -234,6 +254,7 @@
       }
 
       function getBatchOfTransfers(){
+        $('#loading').show();
         pageNumber = 0;
         let rank = [];
         let timer = setInterval( async function(){
@@ -253,19 +274,72 @@
             $('#tomatoRanking').empty();
             tomatinaRanking.forEach((el) => {
               console.log(el);
-              $('#tomatoRanking').append('<li>' + el.address + " " + el.txNum + '</li>');
+              $('#tomatoRanking').append('<li class="d-rank">' + el.address + " (" + el.txNum + ')</li>');
             })
             $('#ranking_update').text(dayjs().format('HH:mm:ss'));
+            $('#loading').hide();
             clearInterval(timer);
           }
         },1000);
       }
 
+      async function getTomatoUser(){
+        let pageNumber = 0;
+        let xembookTomatoUser = 0;
+        let timer1 = setInterval( async function(){
+          pageNumber++;
+          let _mosaic_owned = await accountRepo.search(
+            {
+              pageNumber: pageNumber,
+              mosaicId: new MosaicId(tomatinaMosaicId),
+            }
+          ).toPromise();
+          xembookTomatoUser += _mosaic_owned.data.length;
+          if (_mosaic_owned.isLastPage){
+            $('#xembook_tomato_user').text(xembookTomatoUser);
+            $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
+            clearInterval(timer1);
+          }
+        },1000);
+      }
+      function getToshiTomatoUser(){
+        let pageNumber = 0;
+        let toshiTomatoUser = 0;
+        let timer1 = setInterval( async function(){
+          pageNumber++;
+          let _mosaic_owned = await accountRepo.search(
+            {
+              pageNumber: pageNumber,
+              mosaicId: new MosaicId(toshiTomatoMosaicId),
+            }
+          ).toPromise();
+          toshiTomatoUser += _mosaic_owned.data.length;
+          if (_mosaic_owned.isLastPage){
+            $('#toshi_tomato_user').text(toshiTomatoUser);
+            $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
+            clearInterval(timer1);
+          }
+        },1000);
+      }
+
       drawChart();
+      //初回実行
       getBatchOfTransfers();
+      getTomatoUser();
+      getToshiTomatoUser();
+
       setInterval( function(){
         getBatchOfTransfers();
       }, 60000 * 3); //3分毎
+
+      setInterval( function(){
+        getTomatoUser();
+      }, 60000 * 3); //3分毎
+
+      setInterval( function(){
+        getToshiTomatoUser();
+      }, 60000 * 3); //3分毎
+
       listener.open().then(() => {
         console.log('listner open')
         listener.newBlock().subscribe((block) => {
