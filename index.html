@@ -113,6 +113,7 @@
       let toshiTomatoChartCount = 0;
       let pageNumber = 0;
       const maxPage = 25;
+      const updatetime = 3;
       
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
@@ -127,7 +128,7 @@
       // const toshiTomatoMosaicId = "16D70B79689070DB";
       // const networkType = NetworkType.TEST_NET;
       // const node = await getActiveNode(NetworkType.TEST_NET);
-      // const startBlock = 619006;
+      // const startBlock = 632642;
       // const endBlock = 640000;
 
       console.log("接続", node);
@@ -354,15 +355,15 @@
 
       setInterval( function(){
         getBatchOfTransfers();
-      }, 60000 * 3); //3分毎
+      }, 60000 * updatetime); //3分毎
 
       setInterval( function(){
         getTomatoUser();
-      }, 60000 * 3); //3分毎
+      }, 60000 * updatetime); //3分毎
 
       setInterval( function(){
         getToshiTomatoUser();
-      }, 60000 * 3); //3分毎
+      }, 60000 * updatetime); //3分毎
 
       listener.open().then(() => {
         console.log('listner open')
