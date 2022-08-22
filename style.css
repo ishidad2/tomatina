@@ -115,17 +115,14 @@ header {
   margin:0 100px 0 0;
   font-style:italic;
 }
-.tomatina-links ul li:nth-child(1){
+.tomatina-links ul li:nth-child(odd){
   color:rgb(0, 162, 255);
   font-weight:bold;
 }
-.tomatina-links ul li:nth-child(2){
+.tomatina-links ul li:nth-child(even){
   color:#F00;
 }
-.tomatina-links ul li:nth-child(3){
-  color:rgb(225, 0, 255);
-  font-weight:bold;
-}
+
 .tomatina-links ul li:last-child{
   color:#F90;
   margin:0;
