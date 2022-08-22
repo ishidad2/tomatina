@@ -80,6 +80,11 @@
           <div class="tomato-user">
             toshi.tomato 保有者人数：<span id="toshi_tomato_user">***</span> 人
           </div>
+          <div class="tomato-user">
+            toshi.tomato 未保有アカウント
+            <ul class="toshi-tomato-userl-ist" id="toshi_tomato_user_list">
+            </ul>
+          </div>
           <div class="memo">
             ※トマティーナ Monitorはブロック高：<span id="startBlock"></span>～<span id="endBlock"></span>までのトランザクションをモニターします。
           </div>
@@ -102,7 +107,8 @@
       TransactionGroup,
       Listener,
       ReceiptType,
-      TransactionType
+      TransactionType,
+      MosaicRestrictionEntryType
     } = require("/node_modules/symbol-sdk");
     (async()=>{
       $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
@@ -143,6 +149,7 @@
       const nsRepo = repo.createNamespaceRepository();
       const blockRepo = repo.createBlockRepository();
       const accountRepo = repo.createAccountRepository();
+      const restrictRepo = repo.createRestrictionMosaicRepository();
 
       const epochAdjustment = await repo.getEpochAdjustment().toPromise();
       const wsEndpoint = node.replace('http', 'ws') + "/ws";
@@ -327,7 +334,7 @@
           }
         },1000);
       }
-      function getToshiTomatoUser(){
+      async function getToshiTomatoUser(){
         let pageNumber = 0;
         let toshiTomatoUser = 0;
         let timer1 = setInterval( async function(){
@@ -347,22 +354,53 @@
         },1000);
       }
 
+      async function getTomatoUserList(){
+        let pageNumber = 0;
+        $('#tomatoRanking').empty();
+        let timer1 = setInterval( async function(){
+          pageNumber++;
+          let _mosaic_restriction = await restrictRepo.search(
+            {
+              pageNumber: pageNumber,
+              mosaicId: new MosaicId(toshiTomatoMosaicId),
+            }
+          ).toPromise();
+          _mosaic_restriction.data.forEach((restriction) => {
+            if(restriction.entryType === MosaicRestrictionEntryType.ADDRESS){
+              //アカウント情報取得
+              accountRepo.getAccountInfo(restriction.targetAddress).subscribe((accountInfo) => {
+                let mosaic_flg = false;
+                accountInfo.mosaics.forEach((mosaic) => {
+                  if(mosaic.id.toHex() === toshiTomatoMosaicId){
+                    mosaic_flg = true;
+                  }
+                });
+                if(!mosaic_flg){
+                  $('#toshi_tomato_user_list').append('<li class="address">' + accountInfo.address.plain() + '</li>');
+                }
+              });
+            }
+          })
+          
+          if (_mosaic_restriction.isLastPage){
+            $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
+            clearInterval(timer1);
+          }
+        },1000);
+      }
+
       drawChart();
       //初回実行
       getBatchOfTransfers();
       getTomatoUser();
       getToshiTomatoUser();
+      getTomatoUserList();
 
       setInterval( function(){
         getBatchOfTransfers();
-      }, 60000 * updatetime); //3分毎
-
-      setInterval( function(){
         getTomatoUser();
-      }, 60000 * updatetime); //3分毎
-
-      setInterval( function(){
         getToshiTomatoUser();
+        getTomatoUserList();
       }, 60000 * updatetime); //3分毎
 
       listener.open().then(() => {
