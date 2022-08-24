@@ -15,7 +15,7 @@
 	<meta name="twitter:description" content="トマティーナ Monitorはxembook.tomatoモザイクのトランザクションを可視化するツールです">
 	<meta name="twitter:image" content="https://ishidad2.github.io/2022-tomatina/tomato.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-  <link rel="manifest" href="./manifest.json">
+  <!-- <link rel="manifest" href="./manifest.json"> -->
   <title>トマティーナ Monitor</title>
 </head>
 
@@ -53,6 +53,9 @@
         <div class="col col-sm-12 col-md-11 col-lg-8">
           <div class="date-area">
             🍅トランザクショングラフ (<span id="tomato_graph_update">****</span> 更新)
+          </div>
+          <div id="loading_chart" style="padding: 5px 2%">
+            <img src="./loading-s-17.gif" alt="">
           </div>
           <canvas id="myChart" height="120"></canvas>
         </div>
@@ -110,35 +113,43 @@
       Listener,
       ReceiptType,
       TransactionType,
-      MosaicRestrictionEntryType
+      MosaicRestrictionEntryType,
+      NamespaceId,AliasType
     } = require("/node_modules/symbol-sdk");
     (async()=>{
-      $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
-
       let myChart;
       let labelVal = [dayjs().format('HH:mm:ss')];
-      let tomatoCharCount = 0;
-      let toshiTomatoChartCount = 0;
-      let pageNumber = 0;
-      const maxPage = 25;
+      const maxPage = 30;
       const updatetime = 3;
-      
+      const colors = [
+        { id: 1, backgroundColor: 'rgba(0, 134, 197, 0.7)', borderColor: 'rgba(0, 134, 197, 1)' },
+        { id: 2, backgroundColor: 'rgba(255, 128, 64, 0.7)',borderColor: 'rgba(255,128,64, 1)' },
+        { id: 3, backgroundColor: 'rgba(0, 0, 255, 0.7)', borderColor: 'rgba(0, 0, 255, 1)' },
+        { id: 4, backgroundColor: 'rgba(145, 0, 255, 0.7)',borderColor: 'rgba(145, 0, 255, 1)' },
+        { id: 5, backgroundColor: 'rgba(0, 128, 0, 0.7)',borderColor: 'rgba(0, 128, 0, 1)' },
+        { id: 6, backgroundColor: 'rgba(128, 0, 0, 0.7)',borderColor: 'rgba(128, 0, 0, 1)' },
+      ];
+      let init = false;
+      let graphArray = [];
+              
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
       const toshiTomatoMosaicId = "613E6D0FC11F4530";
       const networkType = NetworkType.MAIN_NET;
-      const node = await getActiveNode(NetworkType.MAIN_NET);
       const startBlock = 1529793; //https://clock.sfn.tools/symbol?block=1529793&lang=ja
       const endBlock = 1532672;   //https://clock.sfn.tools/symbol?block=1532672&lang=ja
-
+      const nodes = ["https://dual-1.nodes-xym.work:3001", "https://sym-main-01.opening-line.jp:3001", "https://sym-main-02.opening-line.jp:3001", "https://sym-main-03.opening-line.jp:3001"];
+      
       // ******** テスト用 ********
       // const tomatinaMosaicId = "224CEE82F56D5A8B";
       // const toshiTomatoMosaicId = "16D70B79689070DB";
       // const networkType = NetworkType.TEST_NET;
-      // const node = await getActiveNode(NetworkType.TEST_NET);
       // const startBlock = 632642;
       // const endBlock = 640000;
+      // const nodes = ["https://sym-test-01.opening-line.jp:3001"];
 
+      const node = nodes[Math.floor(Math.random() * nodes.length)];
+      
       console.log("接続", node);
       $('#startBlock').text(startBlock);
       $('#endBlock').text(endBlock);
@@ -149,7 +160,6 @@
       const repo = new RepositoryFactoryHttp(node);
       const txRepo = repo.createTransactionRepository();
       const nsRepo = repo.createNamespaceRepository();
-      const blockRepo = repo.createBlockRepository();
       const accountRepo = repo.createAccountRepository();
       const restrictRepo = repo.createRestrictionMosaicRepository();
 
@@ -158,8 +168,9 @@
       const listener = new Listener(wsEndpoint,nsRepo,WebSocket);
 
       async function getTransfers(block){
-        tomatoCharCount = 0;
-        toshiTomatoChartCount = 0;
+        graphArray.forEach(data => {
+          data.count = 0;
+        });
         try {
           const tx = await txRepo.search({
             height: block.height.compact(),
@@ -187,13 +198,9 @@
           }else {
             if(tx.mosaics !== undefined){
               tx.mosaics.forEach(mosaic => {
-                if(mosaic.id.toHex() === tomatinaMosaicId){
-                  console.log("🍅モザイクのTx", tx);
-                  tomatoCharCount++;
-                }
-                if(mosaic.id.toHex() === toshiTomatoMosaicId){
-                  console.log("Toshi🍅モザイクのTx", tx);
-                  toshiTomatoChartCount++;
+                const index = graphArray.findIndex((u) => u.mosaic_id === mosaic.id.toHex());
+                if(index > -1){
+                  graphArray[index].count = graphArray[index].count+1;
                 }
               });
             }
@@ -219,11 +226,9 @@
             if( dataset.data.length > max){
               dataset.data.shift();
             }
-            if(dataset.label === "xembook.tomato"){
-              dataset.data.push(tomatoCharCount);
-            }
-            if(dataset.label === "toshi.tomato"){
-              dataset.data.push(toshiTomatoChartCount);
+            const index = graphArray.findIndex((u) => u.name === dataset.label);
+            if(index > -1){
+              dataset.data.push(graphArray[index].count);
             }
           });
           myChart.update();
@@ -231,27 +236,12 @@
         }
       }
       
-      function drawChart(){
+      function drawChart(dataset){
         myChart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: labelVal,
-            datasets: [
-              {
-                label: 'xembook.tomato',
-                data: [0],
-                backgroundColor: 'rgba(0, 134, 197, 0.7)',
-                borderColor: 'rgba(0, 134, 197, 1)',
-                fill: false,
-              },
-              {
-                label: 'toshi.tomato',
-                data: [0],
-                backgroundColor: 'rgba(255,128,64, 0.7)',
-                borderColor: 'rgba(255,128,64, 1)',
-                fill: false,
-              }
-            ]
+            datasets: dataset
           },
           options: {
             scales: {
@@ -261,40 +251,39 @@
             },
           }
         });
+        init = true;
+        $('#loading_chart').hide();
       }
 
-      async function getTomatoTransaction(rank){
-        pageNumber++;
-        console.log("page", pageNumber);
-        let lastHeight = 0;
-        const criteria = {
-          group: TransactionGroup.Confirmed,
-          embedded: true,
-          transferMosaicId: new MosaicId(tomatinaMosaicId),
-          order: "desc",
-          pageNumber: pageNumber
-        }
-        const txs = await txRepo.search(criteria).toPromise();
-        let isLastPage = txs.isLastPage;
-        for(tx of txs.data){
-          //指定ブロック内の🍅トランザクションを計測
-          const block_height = tx.transactionInfo.height.compact();
-          if(endBlock >= block_height && startBlock <= block_height){
-            rank.push(tx.signer.address.plain());
-          }
-          lastHeight = tx.transactionInfo.height.compact();
-        }
-        return [isLastPage, lastHeight];
-      }
-
+      //ランキング取得
       function getBatchOfTransfers(){
+        let pageNumber = 0;
         $('#loading').show();
-        pageNumber = 0;
         let rank = [];
         let timer = setInterval( async function(){
-          [isLastPage, height] = await getTomatoTransaction(rank);
-          console.log("🍅履歴取得開始" + dayjs().format(), isLastPage, height);
-          if (isLastPage || startBlock >= height || maxPage <= pageNumber){
+          pageNumber++;
+          console.log("ランキングpageNumber", pageNumber);
+          const criteria = {
+            group: TransactionGroup.Confirmed,
+            embedded: true,
+            transferMosaicId: new MosaicId(tomatinaMosaicId),
+            order: "desc",
+            pageNumber: pageNumber,
+            pageSize: 60,
+          }
+          const txs = await txRepo.search(criteria).toPromise();
+          for(tx of txs.data){
+            //指定ブロック内の🍅トランザクションを計測
+            const block_height = tx.transactionInfo.height.compact();
+            if(endBlock >= block_height && startBlock <= block_height){
+              rank.push(tx.signer.address.plain());
+            }
+            lastHeight = tx.transactionInfo.height.compact();
+          }
+
+          console.log("🍅履歴取得開始" + dayjs().format(), txs.isLastPage, startBlock >= lastHeight, startBlock >= lastHeight);
+          if (txs.isLastPage || startBlock >= lastHeight || maxPage <= pageNumber){
+            clearInterval(timer);
             let rankings = {};
             for (let i = 0; i < rank.length; i++) {
               var elm = rank[i];
@@ -307,63 +296,69 @@
             });
             $('#tomatoRanking').empty();
             tomatinaRanking.forEach((el) => {
-              console.log(el);
               $('#tomatoRanking').append('<li class="d-rank">' + el.address + " (" + el.txNum + ')</li>');
             })
             $('#ranking_update').text(dayjs().format('HH:mm:ss'));
             $('#loading').hide();
-            clearInterval(timer);
           }
-        },1000);
+        },2500);
       }
 
       async function getTomatoUser(){
         let pageNumber = 0;
         let xembookTomatoUser = 0;
-        let timer1 = setInterval( async function(){
+        let timer = setInterval( async function(){
           pageNumber++;
+          console.log("getTomatoUser_pageNumber", pageNumber);
           let _mosaic_owned = await accountRepo.search(
             {
               pageNumber: pageNumber,
+              pageSize: 60,
               mosaicId: new MosaicId(tomatinaMosaicId),
             }
           ).toPromise();
           xembookTomatoUser += _mosaic_owned.data.length;
-          if (_mosaic_owned.isLastPage){
+          if (_mosaic_owned.isLastPage || maxPage <= pageNumber){
+            clearInterval(timer);
             $('#xembook_tomato_user').text(xembookTomatoUser);
             $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
-            clearInterval(timer1);
           }
-        },1000);
+        },2000);
       }
+      
       async function getToshiTomatoUser(){
         let pageNumber = 0;
         let toshiTomatoUser = 0;
-        let timer1 = setInterval( async function(){
+        let timer = setInterval( async function(){
           pageNumber++;
+          console.log("getToshiTomatoUser_pageNumber", pageNumber);
           let _mosaic_owned = await accountRepo.search(
             {
               pageNumber: pageNumber,
+              pageSize: 60,
               mosaicId: new MosaicId(toshiTomatoMosaicId),
             }
           ).toPromise();
           toshiTomatoUser += _mosaic_owned.data.length;
-          if (_mosaic_owned.isLastPage){
+          if (_mosaic_owned.isLastPage || maxPage <= pageNumber){
+            clearInterval(timer);
             $('#toshi_tomato_user').text(toshiTomatoUser);
             $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
-            clearInterval(timer1);
           }
-        },1000);
+        },2000);
       }
 
       async function getTomatoUserList(){
         let pageNumber = 0;
         $('#tomatoRanking').empty();
-        let timer1 = setInterval( async function(){
+        $('#toshi_tomato_user_list').empty();
+        let timer = setInterval( async function(){
           pageNumber++;
+          console.log("getTomatoUserList_pageNumber", pageNumber);
           let _mosaic_restriction = await restrictRepo.search(
             {
               pageNumber: pageNumber,
+              pageSize: 60,
               mosaicId: new MosaicId(toshiTomatoMosaicId),
             }
           ).toPromise();
@@ -384,14 +379,72 @@
             }
           })
           
-          if (_mosaic_restriction.isLastPage){
+          if (_mosaic_restriction.isLastPage || maxPage <= pageNumber){
             $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
-            clearInterval(timer1);
+            clearInterval(timer);
           }
-        },1000);
+        },2000);
       }
 
-      drawChart();
+      function getTomatoNamespace(){
+        let pageNumber = 0;
+        let mosaicIds=[];
+        let old={};
+        $('#tomato_namespace').empty();
+        let timer = setInterval( async function(){
+          pageNumber++;
+          const nsInfo = await nsRepo.search(
+            {
+              pageNumber: pageNumber,
+              pageSize: 60,
+              aliasType: AliasType.Mosaic
+            }
+          ).toPromise();
+
+          nsInfo.data.forEach((info) => {
+            mosaicIds.push(info.alias.mosaicId);
+          });
+          if (nsInfo.isLastPage || maxPage <= pageNumber){
+            let tomato = [];            
+            nsRepo.getMosaicsNames(mosaicIds).subscribe((mosaicNames) => {
+              mosaicNames.forEach((mosaic) => {
+                if(mosaic.names.length > 0){
+                  let names = mosaic.names[0].name.split('.');
+                  if(names[1] === 'tomato'){
+                    console.log(mosaic.names[0].name);
+                    const labelName = mosaic.names[0].name;
+                    const color = getColor(old);
+                    old = color;
+                    tomato.push(
+                      {
+                        label: labelName,
+                        data: [0],
+                        backgroundColor: color.backgroundColor,
+                        borderColor: color.borderColor,
+                        fill: false,
+                      }
+                    );
+                    graphArray.push({name: labelName, mosaic_id: mosaic.mosaicId.toHex(), count: 0});
+                  }
+                }
+              });
+              drawChart(tomato);
+            });
+            clearInterval(timer);
+          }
+        },2000);
+      }
+
+      function getColor(old){
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        if(old.id === color.id){
+          return getColor(old);
+        }
+        return color;
+      }
+
+      getTomatoNamespace();
+      
       //初回実行
       getBatchOfTransfers();
       getTomatoUser();
@@ -408,7 +461,9 @@
       listener.open().then(() => {
         console.log('listner open')
         listener.newBlock().subscribe((block) => {
-          updateChart(block);
+          if(init){
+            updateChart(block);
+          }
         });
 
         listener.webSocket.onclose = function(){
@@ -419,6 +474,7 @@
 
       function listenNewBlock(){
         listener.newBlock();
+        console.log("listenNewBlock");
         setTimeout(listenNewBlock, 50000);
       }
     })();
