@@ -252,6 +252,7 @@
           }
         });
         init = true;
+        $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
         $('#loading_chart').hide();
       }
 
@@ -325,7 +326,7 @@
           }
         },2000);
       }
-      
+
       async function getToshiTomatoUser(){
         let pageNumber = 0;
         let toshiTomatoUser = 0;
