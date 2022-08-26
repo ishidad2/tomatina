@@ -391,7 +391,6 @@
         let pageNumber = 0;
         let mosaicIds=[];
         let old={};
-        $('#tomato_namespace').empty();
         let timer = setInterval( async function(){
           pageNumber++;
           const nsInfo = await nsRepo.search(
