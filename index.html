@@ -66,7 +66,8 @@
         </div>
         <div class="col">
           <div class="date-area">
-            XEMBook🍅ランキング (<span id="ranking_update">****</span> 更新)
+            XEMBook🍅ランキング (<span id="ranking_update">****</span> 更新)<br />
+            ブロック高：<span id="block_height">****</span>
           </div>
           <div class="ranking">
             <div id="loading">
@@ -96,7 +97,7 @@
             </ul>
           </div>
           <div class="memo">
-            ※トマティーナ Monitorはブロック高：<span id="startBlock"></span>～<span id="endBlock"></span>までのトランザクションのランキグンを表示します。
+            ※トマティーナ Monitorはブロック高：<span id="startBlock"></span>～<span id="endBlock"></span>までのトランザクションのランキグンを表示しています。
           </div>
         </div>
       </div>
@@ -150,7 +151,7 @@
       const tomatinaMosaicId = "310378C18A140D1B";
       const toshiTomatoMosaicId = "613E6D0FC11F4530";
       const networkType = NetworkType.MAIN_NET;
-      const startBlock = 1529764; //https://clock.sfn.tools/symbol?block=1529764&lang=ja
+      const startBlock = 1530966; //https://clock.sfn.tools/symbol?block=1530966&lang=ja
       const endBlock = 1532643;   //https://clock.sfn.tools/symbol?block=1532643&lang=ja
       const nodes = ["https://dual-1.nodes-xym.work:3001", "https://sym-main-01.opening-line.jp:3001", "https://sym-main-02.opening-line.jp:3001", "https://sym-main-03.opening-line.jp:3001"];
       
@@ -247,6 +248,7 @@
           });
           myChart.update();
           $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
+          $('#block_height').text(block.height.compact());
         }
       }
       
@@ -297,6 +299,7 @@
           }
 
           console.log("🍅履歴取得開始" + dayjs().format(), txs.isLastPage, startBlock >= lastHeight, startBlock >= lastHeight);
+          let tomatinaRanking=[];
           if (txs.isLastPage || startBlock >= lastHeight || maxPage <= pageNumber){
             clearInterval(timer);
             let rankings = {};
@@ -306,16 +309,16 @@
             }
             let result = Object.entries(rankings).map(([key, value]) => ({"address": key, "txNum": value}));
 
-            let tomatinaRanking = result.sort(function(a, b){
+            tomatinaRanking = result.sort(function(a, b){
               return (a.txNum > b.txNum) ? -1 : 1;
             });
-            $('#tomatoRanking').empty();
-            tomatinaRanking.forEach((el) => {
-              $('#tomatoRanking').append('<li class="d-rank">' + el.address + " (" + el.txNum + ')</li>');
-            })
             $('#ranking_update').text(dayjs().format('HH:mm:ss'));
             $('#loading').hide();
           }
+          $('#tomatoRanking').empty();
+          tomatinaRanking.forEach((el) => {
+            $('#tomatoRanking').append('<li class="d-rank">' + el.address + " (" + el.txNum + ')</li>');
+          })
         },2500);
       }
 
