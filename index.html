@@ -127,15 +127,24 @@
       const maxPage = 30;
       const updatetime = 3;
       const colors = [
-        { id: 1, backgroundColor: 'rgba(0, 134, 197, 0.7)', borderColor: 'rgba(0, 134, 197, 1)' },
-        { id: 2, backgroundColor: 'rgba(255, 128, 64, 0.7)',borderColor: 'rgba(255,128,64, 1)' },
-        { id: 3, backgroundColor: 'rgba(0, 0, 255, 0.7)', borderColor: 'rgba(0, 0, 255, 1)' },
-        { id: 4, backgroundColor: 'rgba(145, 0, 255, 0.7)',borderColor: 'rgba(145, 0, 255, 1)' },
-        { id: 5, backgroundColor: 'rgba(0, 128, 0, 0.7)',borderColor: 'rgba(0, 128, 0, 1)' },
-        { id: 6, backgroundColor: 'rgba(128, 0, 0, 0.7)',borderColor: 'rgba(128, 0, 0, 1)' },
+        { id: 1, backgroundColor: '#ff0000', borderColor: '#ff0000' }, //red
+        { id: 2, backgroundColor: '#ff1493', borderColor: '#ff1493' }, //deeppink
+        { id: 3, backgroundColor: '#8a2be2', borderColor: '#8a2be2' }, //blueviolet
+        { id: 4, backgroundColor: '#4b0082', borderColor: '#4b0082' }, //indigo
+        { id: 5, backgroundColor: '#800080', borderColor: '#800080' }, //purple
+        { id: 6, backgroundColor: '#ffa500', borderColor: '#ffa500' }, //orange
+        { id: 7, backgroundColor: '#f0e68c', borderColor: '#f0e68c' }, //khaki
+        { id: 8, backgroundColor: '#a0522d', borderColor: '#a0522d' }, //sienna
+        { id: 9, backgroundColor: '#f08080', borderColor: '#f08080' }, //lightcoral
+        { id: 10, backgroundColor: '#006400', borderColor: '#006400' }, //darkgreen
+        { id: 11, backgroundColor: '#00ced1', borderColor: '#00ced1' }, //darkturquoise
+        { id: 12, backgroundColor: '#1e90ff', borderColor: '#1e90ff' }, //dodgerblue
+        { id: 13, backgroundColor: '#0000ff', borderColor: '#0000ff' }, //blue
+        { id: 14, backgroundColor: '#191970', borderColor: '#191970' }, //midnightblue
       ];
       let init = false;
       let graphArray = [];
+      let useColors = [];
               
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
@@ -440,11 +449,16 @@
         },2000);
       }
 
-      function getColor(old){
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        if(old.id === color.id){
-          return getColor(old);
+      function getColor(){
+        if(useColors.length === colors.length){
+          useColors = [];
         }
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const use = useColors.find((useColor) => useColor.id === color.id);
+        if(use){
+          return getColor();
+        }
+        useColors.push(color);
         return color;
       }
 
