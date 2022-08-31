@@ -57,7 +57,7 @@
       <div class="row">
         <div class="col col-sm-12 col-md-11 col-lg-8">
           <div class="date-area">
-            🍅トランザクショングラフ (<span id="tomato_graph_update">****</span> 更新)
+            🍅トランザクショングラフ (<span id="tomato_graph_update">****</span> 更新) <a href="https://symbol.fyi/blocks" target="_blank" rel="noopener noreferrer">公式ブロックエクスプローラー</a>
           </div>
           <div class="date-area">
             <span class="sub-content" id="all_tomato"></span>
@@ -78,6 +78,11 @@
             </div>
             <ul class="d-ranking-list" id="tomatoRanking">
             </ul>
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <div class="me-3">
+              更新間隔 約７分
+            </div>
           </div>
         </div>
         <!-- col end -->
@@ -105,7 +110,18 @@
             </a>～
             <a href="https://clock.sfn.tools/symbol?block=1532643&lang=ja" target="_blank" rel="noopener noreferrer">
               <span id="endBlock"></span>
-            </a> までのトランザクションのランキグンを表示しています。
+            </a> までのトランザクションのランキングを表示しています。
+          </div>
+          <div class="date-area">
+            <input type="checkbox" name="timer_check" value="check" id="timer_check" >
+          </div>
+          <div id="allTransaction"  style="display: none;">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button class="btn btn-primary me-md-2 btn-sm" type="button" id="csv">CSV出力</button>
+              <a style="display: none" id="downloader" href="#"></a>
+            </div>
+            <div class="table-responsive">
+            </div>
           </div>
         </div>
       </div>
@@ -134,7 +150,7 @@
       let myChart;
       let labelVal = [dayjs().format('HH:mm:ss')];
       const maxPage = 30;
-      const updatetime = 3;
+      const updatetime = 7;
       const colors = [
         { id: 1, backgroundColor: '#ff0000', borderColor: '#ff0000' }, //red
         { id: 2, backgroundColor: '#ff1493', borderColor: '#ff1493' }, //deeppink
@@ -154,6 +170,7 @@
       let init = false;
       let graphArray = [];
       let useColors = [];
+      const table =$('<table class="table table-sm table-hover">');
               
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
@@ -236,7 +253,6 @@
           const blockTime = dayjs((epochAdjustment * 1000) + block.timestamp.compact()).format("HH:mm:ss");
           console.log("blockTime", blockTime);
           let chartLabels = myChart.data.labels;
-          let chartDatasets =  myChart.data.datasets;
           if( myChart.data.labels.length > max){
             chartLabels =  myChart.data.labels.slice( myChart.data.labels.length-max,  myChart.data.labels.length)
           }
@@ -254,10 +270,36 @@
               dataset.data.push(graphArray[index].count);
             }
           });
+          appendTableData(block.height.compact(),graphArray);
           myChart.update();
           $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
           $('#block_height').text(block.height.compact());
         }
+      }
+
+      function appendTableData(block, data){
+        var cell = $('table tr:first td').length;
+        $('table tr').each(function(i, e){
+          if(i != 0) { 
+            const name = $(this).find('td')[0];
+            const tomato = data.find((u) => u.name === name.innerHTML);
+            if(tomato.count >= 25){
+              $(this).append('<td class="table-danger">'+ tomato.count  + '</td>');
+            }else if(tomato.count >= 18){
+              $(this).append('<td class="table-warning">'+ tomato.count  + '</td>');
+            }else if(tomato.count >= 10){
+              $(this).append('<td class="table-primary">'+ tomato.count  + '</td>');
+            }else if(tomato.count >= 5){
+              $(this).append('<td class="table-success">'+ tomato.count  + '</td>');
+            }else if(tomato.count >= 1){
+              $(this).append('<td class="table-info">'+ tomato.count  + '</td>');
+            }else{
+              $(this).append('<td>'+ tomato.count  + '</td>');
+            }
+          } else {
+            $(this).append('<th>' + block+ '</th>');
+          } 
+        })
       }
       
       function drawChart(dataset){
@@ -436,7 +478,6 @@
                 if(mosaic.names.length > 0){
                   let names = mosaic.names[0].name.split('.');
                   if(names[1] === 'tomato'){
-                    console.log(mosaic.names[0].name);
                     const labelName = mosaic.names[0].name;
                     const color = getColor(old);
                     old = color;
@@ -454,7 +495,16 @@
                 }
               });
               drawChart(tomato);
-              $('#all_tomato').text('全🍅' + tomato.length + '種（作成した🍅が表示されない場合はリロードしてください）')
+              $('#all_tomato').text('全🍅' + tomato.length + '種（作成した🍅が表示されない場合はリロードしてください）');
+              const thead = $('<thead>');
+              const tr = $('<tr><th></th></tr>').appendTo(thead);
+              const tbody = $('<tbody>');
+              tomato.forEach((el)=> {
+                $('<tr><td>' + el.label + '</td></tr>').appendTo(tbody);
+              });
+              thead.appendTo(table);
+              tbody.appendTo(table);
+              $('#allTransaction').append(table);
             });
             clearInterval(timer);
           }
@@ -473,6 +523,49 @@
         useColors.push(color);
         return color;
       }
+
+      $('#timer_check').click(function(e){
+        if ($("#timer_check").prop("checked")) {
+          $('#allTransaction').show();
+        } else {
+          $('#allTransaction').hide();
+        }
+      });
+
+      $('#csv').click(function() {
+        var d = [];
+        var c = [];
+        $('table tr').each(function(i, e) {
+          var dd = [];
+          var cc = [];
+          if(i === 0) {
+            $(this).find('th').each(function(j, el) {
+              cc.push($(this).text());
+            })
+            c.push(cc);
+          } else {
+            $(this).find('td').each(function(j, el) {
+              dd.push($(this).text());
+            })
+            d.push(dd);
+          }
+        });
+        var m = $.merge(c, d)
+
+        // BOM の用意（文字化け対策）
+        var bom = new Uint8Array([0xEF, 0xBB, 0xBF])
+        
+        // CSV データの用意
+        var csv_data = m.map(function(l){return l.join(',')}).join('\r\n')
+        var blob = new Blob([bom, csv_data], { type: 'text/csv' })
+        var url = (window.URL || window.webkitURL).createObjectURL(blob)
+        var a = document.getElementById('downloader')
+        a.download = 'data.csv'
+        a.href = url
+
+        // ダウンロードリンクをクリックする
+        $('#downloader')[0].click()
+      });
 
       getTomatoNamespace();
       
