@@ -115,12 +115,13 @@
           <div class="date-area">
             <input type="checkbox" name="timer_check" value="check" id="timer_check" >
           </div>
-          <div id="allTransaction"  style="display: none;">
+          <div id="allTransaction" style="display: none;">
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
               <button class="btn btn-primary me-md-2 btn-sm" type="button" id="csv">CSV出力</button>
               <a style="display: none" id="downloader" href="#"></a>
             </div>
             <div class="table-responsive">
+              <div id="allTransactionTable"></div>
             </div>
           </div>
         </div>
@@ -504,7 +505,7 @@
               });
               thead.appendTo(table);
               tbody.appendTo(table);
-              $('#allTransaction').append(table);
+              $('#allTransactionTable').append(table);
             });
             clearInterval(timer);
           }
