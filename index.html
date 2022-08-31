@@ -81,7 +81,7 @@
           </div>
           <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <div class="me-3">
-              更新間隔 約７分
+              更新間隔 約15分
             </div>
           </div>
         </div>
@@ -150,8 +150,8 @@
     (async()=>{
       let myChart;
       let labelVal = [dayjs().format('HH:mm:ss')];
-      const maxPage = 30;
-      const updatetime = 7;
+      const maxPage = 500;
+      const updatetime = 15;
       const colors = [
         { id: 1, backgroundColor: '#ff0000', borderColor: '#ff0000' }, //red
         { id: 2, backgroundColor: '#ff1493', borderColor: '#ff1493' }, //deeppink
@@ -337,7 +337,7 @@
             transferMosaicId: new MosaicId(tomatinaMosaicId),
             order: "desc",
             pageNumber: pageNumber,
-            pageSize: 60,
+            pageSize: 100,
           }
           const txs = await txRepo.search(criteria).toPromise();
           for(tx of txs.data){
