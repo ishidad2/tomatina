@@ -39,18 +39,6 @@
         <div class="tomatina-links">
           <ul>
             <li>トマティーナ🍅ってなに！？<a href="https://twitter.com/xembook/status/1555023490742652929" target="_blank" rel="noopener noreferrer">(@xembook)</a></li>
-            <li>とりあえずこれだけ見とけば大丈夫🍅<a href="https://twitter.com/hossiiii1/status/1564359038703308800" target="_blank" rel="noopener noreferrer">(トマティーナイベントまとめ)</a></li>
-            <li>🍅トマティーナ交換所🍅<a href="https://tomato-dex.herokuapp.com/" target="_blank" rel="noopener noreferrer">(@toshiya_ma)</a></li>
-            <li>Tomatina Walletでトマティーナ🍅<a href="https://twitter.com/mikunNEM/status/1558385436950536192" target="_blank" rel="noopener noreferrer">(@mikunNEM)</a></li>
-            <li>toshi.tomato🍅を手に入れよう！<a href="https://twitter.com/toshiya_ma/status/1560514223322681352" target="_blank" rel="noopener noreferrer">(@toshiya_ma)</a></li>
-            <li>法定通貨がトマト🍅になった時！？<a href="https://twitter.com/subarumanSP/status/1564780014637301762" target="_blank" rel="noopener noreferrer">(@subarumanSP)</a></li>
-            <li>あなたがトマトと言ったから8月31日はトマティーナ記念日🍅😎<a href="https://twitter.com/HANABATA_KE/status/1559803077292863488" target="_blank" rel="noopener noreferrer">(@HANABATA_KE)</a></li>
-            <li>NFTDriveEXでトマティーナ🍅<a href="https://twitter.com/EUFjZEyIuzS9rIi/status/1560656061236776966" target="_blank" rel="noopener noreferrer">(@EUFjZEyIuzS9rIi)</a></li>
-            <li>VR空間でもトマティーナ🍅<a href="https://twitter.com/feiton81118/status/1564780381261660161" target="_blank" rel="noopener noreferrer">(@feiton81118)</a></li>
-            <li>TokenLiveでもトマティーナ🍅<a href="https://twitter.com/hossiiii1/status/1563431810553372672" target="_blank" rel="noopener noreferrer">(@hossiiii1)</a></li>
-            <li>🍅トマト交換所爆誕🍅<a href="https://twitter.com/toshiya_ma/status/1563070724239421441" target="_blank" rel="noopener noreferrer">(@toshiya_ma)</a></li>
-            <li>🍅の恵み🛐GET!<a href="https://twitter.com/KisekinoF/status/1563069948368658433" target="_blank" rel="noopener noreferrer">(@KisekinoF)</a></li>
-            <li>【Arcana夏祭り】<a href="https://twitter.com/x_matsuno/status/1562922958137757698" target="_blank" rel="noopener noreferrer">(@x_matsuno)</a></li>
           </ul>
         </div>
       </div>
@@ -67,25 +55,6 @@
           </div>
           <canvas id="myChart" height="120"></canvas>
         </div>
-        <div class="col">
-          <div class="date-area">
-            XEMBook🍅ランキング (<span id="ranking_update">****</span> 更新)<br />
-            ブロック高：<span id="block_height">****</span>
-          </div>
-          <div class="ranking">
-            <div id="loading">
-              <img src="./loading-s-17.gif" alt="">
-            </div>
-            <ul class="d-ranking-list" id="tomatoRanking">
-            </ul>
-          </div>
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <div class="me-3">
-              更新間隔 約15分
-            </div>
-          </div>
-        </div>
-        <!-- col end -->
       </div>
       <!-- row end -->
       <div class="row">
@@ -95,22 +64,6 @@
           </div>
           <div class="tomato-user">
             xembook.tomato 保有者人数：<span id="xembook_tomato_user">***</span> 人
-          </div>
-          <div class="tomato-user">
-            toshi.tomato 保有者人数：<span id="toshi_tomato_user">***</span> 人 (<a href="https://twitter.com/toshiya_ma/status/1560514223322681352" target="_blank" rel="noopener noreferrer">toshi.tomatoとは？！</a>)
-          </div>
-          <div class="tomato-user">
-            toshi.tomato 未保有アカウント
-            <ul class="toshi-tomato-userl-ist" id="toshi_tomato_user_list">
-            </ul>
-          </div>
-          <div class="memo">
-            ※トマティーナ Monitorはブロック高 <a href="https://clock.sfn.tools/symbol?block=1530966&lang=ja" target="_blank" rel="noopener noreferrer">
-              <span id="startBlock"></span>
-            </a>～
-            <a href="https://clock.sfn.tools/symbol?block=1532643&lang=ja" target="_blank" rel="noopener noreferrer">
-              <span id="endBlock"></span>
-            </a> までのトランザクションのランキングを表示しています。
           </div>
           <div class="date-area">
             <input type="checkbox" name="timer_check" value="check" id="timer_check" >
@@ -172,29 +125,20 @@
       let graphArray = [];
       let useColors = [];
       const table =$('<table class="table table-sm table-hover">');
-              
+
       // ===== 本番 ====
       const tomatinaMosaicId = "310378C18A140D1B";
-      const toshiTomatoMosaicId = "613E6D0FC11F4530";
       const networkType = NetworkType.MAIN_NET;
-      const startBlock = 1530966; //https://clock.sfn.tools/symbol?block=1530966&lang=ja
-      const endBlock = 1532643;   //https://clock.sfn.tools/symbol?block=1532643&lang=ja
-      const nodes = ["https://dual-1.nodes-xym.work:3001", "https://sym-main-01.opening-line.jp:3001", "https://sym-main-02.opening-line.jp:3001", "https://sym-main-03.opening-line.jp:3001"];
-      
+      const nodes = ["https://dual-1.nodes-xym.work:3001", "https://sym-main-03.opening-line.jp:3001"];
+
       // ******** テスト用 ********
       // const tomatinaMosaicId = "224CEE82F56D5A8B";
-      // const toshiTomatoMosaicId = "16D70B79689070DB";
       // const networkType = NetworkType.TEST_NET;
-      // const startBlock = 632642;
-      // const endBlock = 640000;
       // const nodes = ["https://sym-test-01.opening-line.jp:3001"];
 
       const node = nodes[Math.floor(Math.random() * nodes.length)];
-      
-      console.log("接続", node);
-      $('#startBlock').text(startBlock);
-      $('#endBlock').text(endBlock);
 
+      console.log("接続", node);
       const max = 40;
       const ctx = $('#myChart');
 
@@ -302,7 +246,7 @@
           } 
         })
       }
-      
+
       function drawChart(dataset){
         myChart = new Chart(ctx, {
           type: 'line',
@@ -321,56 +265,6 @@
         init = true;
         $('#tomato_graph_update').text(dayjs().format('HH:mm:ss'));
         $('#loading_chart').hide();
-      }
-
-      //ランキング取得
-      function getBatchOfTransfers(){
-        let pageNumber = 0;
-        $('#loading').show();
-        let rank = [];
-        let timer = setInterval( async function(){
-          pageNumber++;
-          console.log("ランキングpageNumber", pageNumber);
-          const criteria = {
-            group: TransactionGroup.Confirmed,
-            embedded: true,
-            transferMosaicId: new MosaicId(tomatinaMosaicId),
-            order: "desc",
-            pageNumber: pageNumber,
-            pageSize: 100,
-          }
-          const txs = await txRepo.search(criteria).toPromise();
-          for(tx of txs.data){
-            //指定ブロック内の🍅トランザクションを計測
-            const block_height = tx.transactionInfo.height.compact();
-            if(endBlock >= block_height && startBlock <= block_height){
-              rank.push(tx.signer.address.plain());
-            }
-            lastHeight = tx.transactionInfo.height.compact();
-          }
-
-          console.log("🍅履歴取得開始" + dayjs().format(), txs.isLastPage, startBlock >= lastHeight, startBlock >= lastHeight);
-          let tomatinaRanking=[];
-          if (txs.isLastPage || startBlock >= lastHeight || maxPage <= pageNumber){
-            clearInterval(timer);
-            let rankings = {};
-            for (let i = 0; i < rank.length; i++) {
-              var elm = rank[i];
-              rankings[elm] = (rankings[elm] || 0) + 1;
-            }
-            let result = Object.entries(rankings).map(([key, value]) => ({"address": key, "txNum": value}));
-
-            tomatinaRanking = result.sort(function(a, b){
-              return (a.txNum > b.txNum) ? -1 : 1;
-            });
-            $('#ranking_update').text(dayjs().format('HH:mm:ss'));
-            $('#loading').hide();
-          }
-          $('#tomatoRanking').empty();
-          tomatinaRanking.forEach((el) => {
-            $('#tomatoRanking').append('<li class="d-rank">' + el.address + " (" + el.txNum + ')</li>');
-          })
-        },2500);
       }
 
       async function getTomatoUser(){
@@ -395,66 +289,6 @@
         },2000);
       }
 
-      async function getToshiTomatoUser(){
-        let pageNumber = 0;
-        let toshiTomatoUser = 0;
-        let timer = setInterval( async function(){
-          pageNumber++;
-          console.log("getToshiTomatoUser_pageNumber", pageNumber);
-          let _mosaic_owned = await accountRepo.search(
-            {
-              pageNumber: pageNumber,
-              pageSize: 60,
-              mosaicId: new MosaicId(toshiTomatoMosaicId),
-            }
-          ).toPromise();
-          toshiTomatoUser += _mosaic_owned.data.length;
-          if (_mosaic_owned.isLastPage || maxPage <= pageNumber){
-            clearInterval(timer);
-            $('#toshi_tomato_user').text(toshiTomatoUser);
-            $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
-          }
-        },2000);
-      }
-
-      async function getTomatoUserList(){
-        let pageNumber = 0;
-        $('#tomatoRanking').empty();
-        $('#toshi_tomato_user_list').empty();
-        let timer = setInterval( async function(){
-          pageNumber++;
-          console.log("getTomatoUserList_pageNumber", pageNumber);
-          let _mosaic_restriction = await restrictRepo.search(
-            {
-              pageNumber: pageNumber,
-              pageSize: 60,
-              mosaicId: new MosaicId(toshiTomatoMosaicId),
-            }
-          ).toPromise();
-          _mosaic_restriction.data.forEach((restriction) => {
-            if(restriction.entryType === MosaicRestrictionEntryType.ADDRESS){
-              //アカウント情報取得
-              accountRepo.getAccountInfo(restriction.targetAddress).subscribe((accountInfo) => {
-                let mosaic_flg = false;
-                accountInfo.mosaics.forEach((mosaic) => {
-                  if(mosaic.id.toHex() === toshiTomatoMosaicId){
-                    mosaic_flg = true;
-                  }
-                });
-                if(!mosaic_flg){
-                  $('#toshi_tomato_user_list').append('<li class="address">@' + accountInfo.address.plain() + '</li>');
-                }
-              });
-            }
-          })
-          
-          if (_mosaic_restriction.isLastPage || maxPage <= pageNumber){
-            $('#tomato_user_update').text(dayjs().format('HH:mm:ss'));
-            clearInterval(timer);
-          }
-        },2000);
-      }
-
       function getTomatoNamespace(){
         let pageNumber = 0;
         let mosaicIds=[];
@@ -473,7 +307,7 @@
             mosaicIds.push(info.alias.mosaicId);
           });
           if (nsInfo.isLastPage || maxPage <= pageNumber){
-            let tomato = [];            
+            let tomato = [];
             nsRepo.getMosaicsNames(mosaicIds).subscribe((mosaicNames) => {
               mosaicNames.forEach((mosaic) => {
                 if(mosaic.names.length > 0){
@@ -555,7 +389,7 @@
 
         // BOM の用意（文字化け対策）
         var bom = new Uint8Array([0xEF, 0xBB, 0xBF])
-        
+
         // CSV データの用意
         var csv_data = m.map(function(l){return l.join(',')}).join('\r\n')
         var blob = new Blob([bom, csv_data], { type: 'text/csv' })
@@ -567,19 +401,12 @@
         // ダウンロードリンクをクリックする
         $('#downloader')[0].click()
       });
-
       getTomatoNamespace();
-      
-      //初回実行
-      getBatchOfTransfers();
-      getTomatoUser();
-      getToshiTomatoUser();
-      getTomatoUserList();
 
+      //初回実行
+      getTomatoUser();
       setInterval( function(){
-        getBatchOfTransfers();
         getTomatoUser();
-        getToshiTomatoUser();
         getTomatoUserList();
       }, 60000 * updatetime); //3分毎
 
